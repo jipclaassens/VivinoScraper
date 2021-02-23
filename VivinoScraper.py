@@ -2,6 +2,7 @@ import re
 import requests
 from time import sleep
 from bs4 import BeautifulSoup
+import pandas as pd
 
 url = 'https://www.vivino.com/search/wines?q={kw}&start={page}'
 prices_url = 'https://www.vivino.com/prices'
@@ -12,7 +13,7 @@ def get_wines(kw):
         page = 1
         while True:
             soup = BeautifulSoup(s.get(url.format(kw=kw, page=page), headers=headers).content, 'html.parser')
-            print(soup)
+            # print(soup)
             if not soup.select('.default-wine-card'):
                 break
 
@@ -34,16 +35,34 @@ def get_wines(kw):
 
                 ratings = wine_card.select_one('.text-micro')
                 ratings = ratings.get_text(strip=True) if ratings else '-'
+                
+                country = wine_card.select_one('.country')
+                country = country.get_text(strip=True) if country else '-'
 
                 link = 'https://www.vivino.com' + wine_card.a['href']
 
-                yield title, price, average, ratings, link
-
+                yield title, price, average, ratings, country, link
+                
             sleep(3)
             page +=1
 
 kw = 'primitivo'
-for title, price, average, ratings, link in get_wines(kw):
+rows = []
+
+for title, price, average, ratings, country, link in get_wines(kw):
+    rows.append([title, price, average, ratings, country, link])
     print(title)
-    print(ratings)
     print(price)
+    print(average)
+    print(ratings)
+    print(country)
+    
+
+df = pd.DataFrame(rows, columns=['title', 'price', 'average', 'ratings', 'country', 'link'])
+df.to_csv("DataExport.csv")
+
+# print(df)
+
+
+
+
